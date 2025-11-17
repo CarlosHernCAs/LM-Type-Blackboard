@@ -9,6 +9,7 @@ import { db } from './config/database';
 import { redis } from './config/redis';
 import routes from './routes';
 import { authenticate } from './middleware/auth';
+import { setupSocketIO } from './socket';
 
 const fastify = Fastify({
   logger: {
@@ -108,6 +109,10 @@ async function start() {
     // Register plugins and routes
     await registerPlugins();
     await registerRoutes();
+
+    // Setup Socket.IO
+    setupSocketIO(fastify);
+    fastify.log.info('✅ Socket.IO initialized');
 
     // Start listening
     await fastify.listen({
