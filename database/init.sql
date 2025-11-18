@@ -383,6 +383,27 @@ CREATE INDEX idx_notifications_user ON notifications(user_id);
 CREATE INDEX idx_forum_posts_forum ON forum_posts(forum_id);
 CREATE INDEX idx_forum_posts_author ON forum_posts(author_id);
 
+-- Índices adicionales para optimización de queries comunes
+CREATE INDEX idx_enrollments_user_course ON enrollments(user_id, course_id);
+CREATE INDEX idx_enrollments_status ON enrollments(status);
+CREATE INDEX idx_messages_recipient_unread ON messages(recipient_id, is_read);
+CREATE INDEX idx_messages_sender_created ON messages(sender_id, created_at DESC);
+CREATE INDEX idx_notifications_user_unread ON notifications(user_id, is_read);
+CREATE INDEX idx_notifications_created ON notifications(created_at DESC);
+CREATE INDEX idx_assignments_course_published ON assignments(course_id, is_published);
+CREATE INDEX idx_assignments_due_date ON assignments(due_date);
+CREATE INDEX idx_forum_posts_parent ON forum_posts(parent_post_id);
+CREATE INDEX idx_forum_posts_forum_created ON forum_posts(forum_id, created_at DESC);
+CREATE INDEX idx_files_uploaded_by ON files(uploaded_by);
+CREATE INDEX idx_files_course ON files(course_id);
+CREATE INDEX idx_submissions_student_assignment ON submissions(student_id, assignment_id);
+CREATE INDEX idx_submissions_graded ON submissions(graded_at);
+CREATE INDEX idx_grades_student_course ON grades(student_id, course_id);
+CREATE INDEX idx_attendance_course_date ON attendance(course_id, session_date);
+CREATE INDEX idx_user_achievements_user ON user_achievements(user_id);
+CREATE INDEX idx_calendar_events_course ON calendar_events(course_id);
+CREATE INDEX idx_calendar_events_start_time ON calendar_events(start_time);
+
 -- Triggers for updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$

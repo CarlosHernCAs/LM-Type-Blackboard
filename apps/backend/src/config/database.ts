@@ -1,11 +1,13 @@
 import { Pool } from 'pg';
-import { config } from './index';
+import { configValidado } from './env';
 
 export const db = new Pool({
-  connectionString: config.databaseUrl,
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionString: configValidado.databaseUrl,
+  max: 20, // Máximo de conexiones concurrentes
+  min: 5, // Mínimo de conexiones en el pool
+  idleTimeoutMillis: 30000, // Tiempo antes de cerrar conexión inactiva
+  connectionTimeoutMillis: 2000, // Timeout para establecer conexión
+  allowExitOnIdle: false, // No permitir que el pool se cierre automáticamente
 });
 
 // Handle errors
