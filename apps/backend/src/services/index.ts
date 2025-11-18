@@ -5,3 +5,7 @@ export { EnrollmentService } from './enrollment.service';
 export { MessageService } from './message.service';
 export { CalendarService } from './calendar.service';
 export { NotificationService } from './notification.service';
+export { AssignmentService } from './assignment.service';
+export { ForumService } from './forum.service';
+export { UploadService } from './upload.service';
+export { UserService } from './user.service';

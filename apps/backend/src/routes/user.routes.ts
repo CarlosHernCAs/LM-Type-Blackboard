@@ -1,72 +1,68 @@
 import { FastifyInstance } from 'fastify';
+import { z } from 'zod';
 import { db } from '../config/database';
+import { UserController } from '../controllers';
+import { UserService } from '../services';
 
 export default async function userRoutes(fastify: FastifyInstance) {
-  // All routes require authentication
+  // Inicializar servicio y controlador
+  const userService = new UserService(db);
+  const userController = new UserController(userService);
+
   fastify.addHook('onRequest', fastify.authenticate);
 
-  // Get all users (admin only)
+  // Obtener todos los usuarios (admin)
   fastify.get('/', async (request, reply) => {
-    try {
-      const currentUser = request.user as any;
-
-      if (currentUser.role !== 'admin') {
-        return reply.code(403).send({ error: 'Forbidden' });
-      }
-
-      const result = await db.query(
-        `SELECT id, username, email, first_name, last_name, role, is_active, created_at
-         FROM users
-         ORDER BY created_at DESC`
-      );
-
-      return result.rows.map(user => ({
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        firstName: user.first_name,
-        lastName: user.last_name,
-        role: user.role,
-        isActive: user.is_active,
-        createdAt: user.created_at,
-      }));
-    } catch (error) {
-      fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
-    }
+    return userController.obtenerTodos(request, reply);
   });
 
-  // Get user by ID
+  // Obtener usuario por ID
   fastify.get('/:id', async (request, reply) => {
-    try {
-      const { id } = request.params as { id: string };
+    return userController.obtenerPorId(request, reply);
+  });
 
-      const result = await db.query(
-        `SELECT id, username, email, first_name, last_name, role, avatar_url, is_active, created_at
-         FROM users
-         WHERE id = $1`,
-        [id]
-      );
+  // Actualizar usuario
+  fastify.put('/:id', async (request, reply) => {
+    return userController.actualizar(request, reply);
+  });
 
-      if (result.rows.length === 0) {
-        return reply.code(404).send({ error: 'User not found' });
-      }
+  // Desactivar usuario
+  fastify.post('/:id/desactivar', async (request, reply) => {
+    return userController.desactivar(request, reply);
+  });
 
-      const user = result.rows[0];
-      return {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        firstName: user.first_name,
-        lastName: user.last_name,
-        role: user.role,
-        avatarUrl: user.avatar_url,
-        isActive: user.is_active,
-        createdAt: user.created_at,
-      };
-    } catch (error) {
-      fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
-    }
+  // Activar usuario
+  fastify.post('/:id/activar', async (request, reply) => {
+    return userController.activar(request, reply);
+  });
+
+  // Buscar usuarios
+  fastify.get('/buscar', async (request, reply) => {
+    return userController.buscar(request, reply);
+  });
+
+  // Obtener estudiantes
+  fastify.get('/rol/estudiantes', async (request, reply) => {
+    return userController.obtenerEstudiantes(request, reply);
+  });
+
+  // Obtener profesores
+  fastify.get('/rol/profesores', async (request, reply) => {
+    return userController.obtenerProfesores(request, reply);
+  });
+
+  // Obtener padres
+  fastify.get('/rol/padres', async (request, reply) => {
+    return userController.obtenerPadres(request, reply);
+  });
+
+  // Obtener estadísticas
+  fastify.get('/estadisticas/general', async (request, reply) => {
+    return userController.obtenerEstadisticas(request, reply);
+  });
+
+  // Actualizar foto de perfil
+  fastify.put('/:id/foto-perfil', async (request, reply) => {
+    return userController.actualizarFotoPerfil(request, reply);
   });
 }

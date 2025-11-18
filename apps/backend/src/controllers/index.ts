@@ -4,3 +4,7 @@ export { EnrollmentController } from './enrollment.controller';
 export { MessageController } from './message.controller';
 export { CalendarController } from './calendar.controller';
 export { NotificationController } from './notification.controller';
+export { AssignmentController } from './assignment.controller';
+export { ForumController } from './forum.controller';
+export { UploadController } from './upload.controller';
+export { UserController } from './user.controller';

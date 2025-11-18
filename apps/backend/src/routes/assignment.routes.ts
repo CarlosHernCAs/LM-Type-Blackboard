@@ -1,73 +1,88 @@
 import { FastifyInstance } from 'fastify';
+import { z } from 'zod';
 import { db } from '../config/database';
+import { AssignmentController } from '../controllers';
+import { AssignmentService } from '../services';
+import { createAssignmentSchema, updateAssignmentSchema } from '../utils/validation';
 
 export default async function assignmentRoutes(fastify: FastifyInstance) {
-  // All routes require authentication
+  // Inicializar servicio y controlador
+  const assignmentService = new AssignmentService(db);
+  const assignmentController = new AssignmentController(assignmentService);
+
+  // Todas las rutas requieren autenticación
   fastify.addHook('onRequest', fastify.authenticate);
 
-  // Get assignments for a course
-  fastify.get('/course/:courseId', async (request, reply) => {
+  // Crear tarea
+  fastify.post('/', async (request, reply) => {
     try {
-      const { courseId } = request.params as { courseId: string };
-
-      const result = await db.query(
-        `SELECT * FROM assignments
-         WHERE course_id = $1 AND is_published = true
-         ORDER BY due_date ASC`,
-        [courseId]
-      );
-
-      return result.rows.map(assignment => ({
-        id: assignment.id,
-        courseId: assignment.course_id,
-        moduleId: assignment.module_id,
-        title: assignment.title,
-        description: assignment.description,
-        type: assignment.type,
-        maxPoints: assignment.max_points,
-        dueDate: assignment.due_date,
-        allowLate: assignment.allow_late,
-        latePenaltyPercent: assignment.late_penalty_percent,
-        createdAt: assignment.created_at,
-      }));
+      createAssignmentSchema.parse(request.body);
+      return assignmentController.crear(request, reply);
     } catch (error) {
-      fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      if (error instanceof z.ZodError) {
+        return reply.code(400).send({ error: error.errors });
+      }
+      throw error;
     }
   });
 
-  // Get assignment by ID
+  // Obtener todas las tareas
+  fastify.get('/', async (request, reply) => {
+    return assignmentController.obtenerTodos(request, reply);
+  });
+
+  // Obtener tareas por curso
+  fastify.get('/curso/:cursoId', async (request, reply) => {
+    return assignmentController.obtenerPorCurso(request, reply);
+  });
+
+  // Obtener próximas tareas del estudiante
+  fastify.get('/proximas', async (request, reply) => {
+    return assignmentController.obtenerProximas(request, reply);
+  });
+
+  // Obtener tarea por ID
   fastify.get('/:id', async (request, reply) => {
+    return assignmentController.obtenerPorId(request, reply);
+  });
+
+  // Actualizar tarea
+  fastify.put('/:id', async (request, reply) => {
     try {
-      const { id } = request.params as { id: string };
-
-      const result = await db.query('SELECT * FROM assignments WHERE id = $1', [id]);
-
-      if (result.rows.length === 0) {
-        return reply.code(404).send({ error: 'Assignment not found' });
-      }
-
-      const assignment = result.rows[0];
-      return {
-        id: assignment.id,
-        courseId: assignment.course_id,
-        moduleId: assignment.module_id,
-        title: assignment.title,
-        description: assignment.description,
-        type: assignment.type,
-        maxPoints: assignment.max_points,
-        dueDate: assignment.due_date,
-        allowLate: assignment.allow_late,
-        latePenaltyPercent: assignment.late_penalty_percent,
-        instructions: assignment.instructions,
-        attachments: assignment.attachments,
-        isPublished: assignment.is_published,
-        createdAt: assignment.created_at,
-        updatedAt: assignment.updated_at,
-      };
+      updateAssignmentSchema.parse(request.body);
+      return assignmentController.actualizar(request, reply);
     } catch (error) {
-      fastify.log.error(error);
-      return reply.code(500).send({ error: 'Internal server error' });
+      if (error instanceof z.ZodError) {
+        return reply.code(400).send({ error: error.errors });
+      }
+      throw error;
     }
+  });
+
+  // Eliminar tarea
+  fastify.delete('/:id', async (request, reply) => {
+    return assignmentController.eliminar(request, reply);
+  });
+
+  // Publicar tarea
+  fastify.post('/:id/publicar', async (request, reply) => {
+    return assignmentController.publicar(request, reply);
+  });
+
+  // Entregas
+  fastify.post('/entregas', async (request, reply) => {
+    return assignmentController.crearEntrega(request, reply);
+  });
+
+  fastify.get('/:tareaId/entregas', async (request, reply) => {
+    return assignmentController.obtenerEntregas(request, reply);
+  });
+
+  fastify.post('/entregas/:entregaId/calificar', async (request, reply) => {
+    return assignmentController.calificar(request, reply);
+  });
+
+  fastify.get('/:tareaId/estadisticas', async (request, reply) => {
+    return assignmentController.obtenerEstadisticas(request, reply);
   });
 }
